@@ -1,8 +1,8 @@
 Package: extremis
-Version: 1.0
+Version: 1.21
 Date: 2020-11-20
 Title: Statistics of Extremes
-Description: Conducts inference in statistical models for extreme values (de Carvalho et al (2012), <doi:10.1080/03610926.2012.709905>; de Carvalho and Davison (2014), <10.1080/01621459.2013.872651>; Einmahl et al (2016), <doi:10.1111/rssb.12099>).
+Description: Conducts inference in statistical models for extreme values (de Carvalho et al (2012), <doi:10.1080/03610926.2012.709905>; de Carvalho and Davison (2014), <doi:10.1080/01621459.2013.872651>; Einmahl et al (2016), <doi:10.1111/rssb.12099>).
 Authors@R: c(person("Miguel", "de Carvalho", role = c("aut", "cre"),
 	   	  email = "miguel.decarvalho@ed.ac.uk"), 
    	     person("Rodrigo", "Rubio", role = c("aut"),
@@ -20,3 +20,4 @@ Imports: emplik,methods,MASS,evd
 NeedsCompilation: yes
 LazyData: true
 Packaged: 2020-11-20 16:31:54 UTC; mdecarvalho
+
