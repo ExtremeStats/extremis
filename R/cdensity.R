@@ -17,31 +17,35 @@
 ##  http://www.r-project.org/Licenses/                                        ##
 ##  ========================================================================  ##
 
-cdensity <- function(XY, tau= 0.95,raw=TRUE, ...)
+cdensity <- function(XY, tau= 0.95,raw=TRUE, structure = "min", ...)
     UseMethod("cdensity")
 
-cdensity.default <- function(XY, tau=0.95,raw=TRUE, ...) {
+cdensity.default <- function(XY, tau=0.95,raw=TRUE, structure = "min", ...) {
     if((is.matrix(XY)|is.data.frame(XY))==FALSE)
         stop('data needs to be a matrix or data frame')
     dim<-ncol(XY)
     if(dim==2){
-        y <- XY[,2]
-        raw<-TRUE
+        y<-XY[,2]
     }
     else{
         ## Convert data to common margins, if raw == TRUE
         if(raw == TRUE) {
             n <- dim(XY)[1]
-            FX <- ecdf(XY[, 2])
-            FY <- ecdf(XY[, 3])
-            x1 <- -1 / log(n / (n + 1) * FX(XY[, 2]))
-            x2 <- -1 / log(n / (n + 1) * FY(XY[, 3]))
+            FZ<-apply(XY[,-1], 2, function(c) -1/log(length(c)/(length(c) + 1)*ecdf(c)(c)))
         }
         if(raw == FALSE) {
-            x1 <- XY[, 2]
-            x2 <- XY[, 3]
+            FZ<-XY[,-1]
         }
-        y<- apply(cbind(x1,x2),1,min)}
+        if(structure == "min"){
+            y<- apply(FZ,1,min)
+        } 
+        if(structure == "max"){
+            y<- apply(FZ,1,max)
+        } 
+        if(structure == "sum"){
+            y<- apply(FZ,1,sum)
+        } 
+    }
     threshold <-quantile(y, tau)
     ## Basic input validation
     if (as.numeric(threshold) >= max(y))
@@ -61,15 +65,20 @@ cdensity.default <- function(XY, tau=0.95,raw=TRUE, ...) {
 
     plot.cdensity <- function(x, rugrep = TRUE,
                           original = TRUE, main = "", ...) {
+        dim<-ncol(x$XY)
+        if(dim==2){
+            labs<-"Scedasis Density"
+        }
+        else{labs<-"Structure Scedasis Density"}
     if(original == TRUE) {
-        plot(x$XY[, 1], x$c$y, xlab = "Time", ylab = "Scedasis Density", 
+        plot(x$XY[, 1], x$c$y, xlab = "Time", ylab = labs, 
              main = "", type = "S", ...)
         if(rugrep == TRUE)
             rug(x$XY[x$w * x$T, 1])
     }
     if(original == FALSE) {
         par(pty = "s")
-        plot(x$c, xlab = "w", ylab = "Scedasis Density", 
+        plot(x$c, xlab = "w", ylab = labs, 
              main = "", ...)
         if (rugrep == TRUE)
           rug(x$w)

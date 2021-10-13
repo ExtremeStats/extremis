@@ -1,8 +1,8 @@
-cPTdensity <- function(XY, tau = 0.95, raw = TRUE, prior, mcmc, state, status,
+cPTdensity <- function(XY, tau = 0.95, raw = TRUE, structure = "min", prior, mcmc, state, status,
                        data=sys.frame(sys.parent()),na.action=na.fail)
   UseMethod("cPTdensity")
 
-cPTdensity.default <- function(XY, tau = 0.95, raw = TRUE, prior, mcmc, state,status,
+cPTdensity.default <- function(XY, tau = 0.95, raw = TRUE, structure = "min", prior, mcmc, state,status,
                                data=sys.frame(sys.parent()),na.action=na.fail) {
   if((is.matrix(XY)|is.data.frame(XY))==FALSE)
     stop('data needs to be a matrix or data frame')
@@ -14,16 +14,21 @@ cPTdensity.default <- function(XY, tau = 0.95, raw = TRUE, prior, mcmc, state,st
       ## Convert data to common margins, if raw == TRUE
   if(raw == TRUE) {
     n <- dim(XY)[1]
-    FX <- ecdf(XY[, 2])
-    FY <- ecdf(XY[, 3])
-    x1 <- -1 / log(n / (n + 1) * FX(XY[, 2]))
-    x2 <- -1 / log(n / (n + 1) * FY(XY[, 3]))
-  }
+    FZ<-apply(XY[,-1], 2, function(c) -1/log(length(c)/(length(c) + 1)*ecdf(c)(c)))
+                  }
   if(raw == FALSE) {
-    x1 <- XY[, 2]
-    x2 <- XY[, 3]
-  }
-  y<- apply(cbind(x1,x2),1,min)}
+    FZ<-XY[,-1]
+                  }
+  if(structure == "min"){
+      y<- apply(FZ,1,min)
+  } 
+  if(structure == "max"){
+      y<- apply(FZ,1,max)
+  } 
+  if(structure == "sum"){
+      y<- apply(FZ,1,sum)
+  } 
+                               }
     threshold <-quantile(y, tau)
  
    ## Basic input validation
@@ -67,8 +72,8 @@ cPTdensity.default <- function(XY, tau = 0.95, raw = TRUE, prior, mcmc, state,st
     } 
     else
     {
-      left <- min(y)-0.5*sqrt(var(y))
-      right <- max(y)+0.5*sqrt(var(y))
+      left <- 0
+      right <-1
     }    
     
     #########################################################################################
@@ -211,7 +216,7 @@ cPTdensity.default <- function(XY, tau = 0.95, raw = TRUE, prior, mcmc, state,st
     
     thetasave <- matrix(0,nrow=nsave,ncol=nvar+nvar*(nvar+1)/2+1)
     randsave <- matrix(0,nrow=nsave,ncol=nvar)
-    estimasave<-matrix(0,nrow=nsave,ncol=nrec)
+    estimasave<-matrix(0,nrow=nsave,ncol=ngrid)
     
     #########################################################################################
     # parameters depending on status
@@ -373,6 +378,8 @@ cPTdensity.default <- function(XY, tau = 0.95, raw = TRUE, prior, mcmc, state,st
     )
     
     thetasave <- matrix(foo$thetasave,nrow=nsave,ncol=(nvar+nvar*(nvar+1)/2+1))
+    estimasave<-matrix(foo$estimasave,nrow=nsave,ncol=ngrid)
+   
     if(nvar>1)
     {
       randsave <- matrix(foo$randsave,nrow=nsave,ncol=nvar)
@@ -613,8 +620,9 @@ cPTdensity.default <- function(XY, tau = 0.95, raw = TRUE, prior, mcmc, state,st
   
   ##############################
   ##############################
-  c <- PTdensitybeta(w, ngrid  = T,prior=prior,mcmc=mcmc,state,status=status,
+  c <- PTdensitybeta(w, ngrid  = T,prior = prior,mcmc = mcmc,state,status = status,
                      data=sys.frame(sys.parent()),na.action=na.fail)
+  ###############
   ## Organize and return outputs    
   outputs <- list(c = c, w = w, k = k, T = T, XY = XY)
   class(outputs) <- "cPTdensity"
@@ -622,25 +630,95 @@ cPTdensity.default <- function(XY, tau = 0.95, raw = TRUE, prior, mcmc, state,st
 }
 
 plot.cPTdensity <- function(x, rugrep = TRUE,
-                            original = TRUE, main = "", ...) {
-  if(original == TRUE) {
-    aux<-data.frame(x$c$x1,x$c$dens)
-    aux<-aux[which(aux[,1]>0 & aux[,1]<1),]
-    plot(aux, xlab = "Time", ylab = "Joint Scedasis Density", 
+                            original = TRUE, main = "", 
+                            CI= FALSE, rquantiles = FALSE, ...) {
+  if ( rquantiles == TRUE){
+    salida<-cbind(x$c$x1,t(x$c$estimasave))
+    delta<-salida[,1][2]-salida[,1][1]
+    acumulado<-apply(salida[,-1],2,cumsum)
+    mean<-apply(acumulado*delta,1,mean)
+    intV<-t(apply(acumulado*delta, 1, quantile, probs = c(0.05, 0.95)))
+    indexw<-numeric()
+    for (j in 1:length(x$w)){
+      indexw[j]<-sum(x$c$x1<=x$w[j])}
+    varaux<-mean[indexw]
+    min<-intV[,1][indexw]
+    max<-intV[,2][indexw]
+    #===
+    varaux<-c(varaux,tail(mean,1))
+    min<-c(min,tail(intV[,1],1))
+    max<-c(max,tail(intV[,2],1))
+    #===
+    ylim <- range(varaux)
+    n<-length(varaux)
+    x <- qnorm(ppoints(n))[order(order(varaux))]
+    y<-qnorm(varaux)
+    ymin<-qnorm(min)[order(x)]
+    ymax<-qnorm(max)[order(x)]
+    ymax[which(is.na(ymax))]<-max(na.omit(ymax))
+    ymin[which(is.na(ymin))]<-max(na.omit(ymin))
+    xymin<- qnorm(ppoints(n))[order(order(ymin))]
+    xymax<-qnorm(ppoints(n))[order(order(ymax))]
+    interval<-data.frame(x=x[order(x)],mean=y[order(x)],
+                         min=ymin[order(xymin)],max=ymax[order(xymax)])
+    par(pty="s")
+    plot(interval$x,interval$x,ylab="Sample quantiles",xlab="Theoretical quantiles",
+         xlim = c(-2.5, 2.5), ylim = c(-2.5, 2.5),type="l",...)
+    polygon(c(rev(interval$x), interval$x), c(rev(interval$min), 
+                                              interval$max), col = 'lightgrey', border = NA)
+    lines(interval$x,interval$mean,type="S",lty=2)
+  }
+  if (rquantiles == FALSE){
+  aux<-data.frame(x$XY[, 1],x$c$x1,x$c$dens)
+  aux<-aux[which(aux[,2]>0.01 & aux[,2]<.99),]
+  dim<-ncol(x$XY)
+  if(dim==2){
+    labs<-"Scedasis Density"
+  }
+  else{labs<-"Structure Scedasis Density"}
+  if(CI==TRUE){
+    ci<-data.frame(x$XY[,1],x$c$x1,t(x$c$estimasave))
+    ci<-ci[which(ci[,2]>0.01 & ci[,2]<.99),]
+    intV <- t(apply(ci[,-c(1,2)], 1, quantile, probs = c(0.1, 0.85)));
+    min<-intV[,1];max<-intV[,2];
+    yl<-max(min,max)
+    if(original == TRUE) { 
+      plot(aux[,1],aux[,3], xlab = "Time", ylab = labs, 
+           main = "",
+           type = "S", ylim=c(0,yl),...)
+      polygon(c(rev(ci[,1]), ci[,1]), c(rev(min), max), col = 'lightgrey', border = NA)
+      lines(aux[,1],aux[,3],type="S")
+      if(rugrep == TRUE)
+        rug(x$XY[x$w * x$T, 1])
+    }
+    if(original == FALSE) {
+      par(pty = "s")
+      plot(aux[,2],aux[,3], xlab = "w", ylab = labs, 
+           main = "",ylim=c(0,yl), type = "S", ...)
+      polygon(c(rev(ci[,2]), ci[,2]), c(rev(min), max), col = 'lightgrey', border = NA)
+      lines(aux[,2],aux[,3],type="S")
+      if (rugrep == TRUE)
+        rug(x$w)
+    }
+  }
+  else{
+    if(original == TRUE) {
+    plot(aux[,1],aux[,3], xlab = "Time", ylab = labs, 
          main = "",
          type = "S", ...)
     if(rugrep == TRUE)
       rug(x$XY[x$w * x$T, 1])
-  }
+        }
   if(original == FALSE) {
     par(pty = "s")
-    plot(x$c, xlab = "w", ylab = "Joint Scedasis Density", 
+    plot(aux[,2],aux[,3], xlab = "w", ylab = labs, 
          main = "",
-         ...)
+         type = "S", ...)
     if (rugrep == TRUE)
       rug(x$w)
-  }
-}
+  }}}
+  
+ }
 
 
 
