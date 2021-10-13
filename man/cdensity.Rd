@@ -7,7 +7,7 @@
   This function computes a kernel joint scedasis density estimate.
 }
 \usage{
-cdensity(XY, tau = 0.95, raw = TRUE, ...)
+cdensity(XY, tau = 0.95, raw = TRUE, structure = "min", ...)
 }
 
 \arguments{
@@ -21,6 +21,7 @@ cdensity(XY, tau = 0.95, raw = TRUE, ...)
    \code{Y} will be understood as already in unit Fréchet scale. If a
    single variable is provided
    \code{raw} is automatically set to \code{TRUE}.}  
+ \item{structure}{the structure scedasis option: "min","max","sum". The default will compute the minimum.}
   \item{...}{further arguments for \code{density} methods.}  
 }
 

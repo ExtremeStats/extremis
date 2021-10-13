@@ -2,14 +2,14 @@
 \name{cPTdensity}
 \alias{cPTdensity}
 \alias{cPTdensity.default}
-\title{Nonparametric Bayesian Estimation of Joint Scedasis Density using Mixtures of Polya Trees}
+\title{Nonparametric Bayesian Estimation of Structure Scedasis Density using Mixtures of Polya Trees}
 \description{
-  This function computes a Bayesian joint scedasis density estimate generating a posterior sample of a finite 
-    Mixture of Polya trees.% For the univariate case it computes Einmahl et al (2016) approach using a finite mixture of Polya trees.  
+  This function computes a Bayesian structure scedasis density estimate generating a posterior sample of a finite
+    Mixture of Polya trees.% For the univariate case it computes Einmahl et al (2016) approach using a finite mixture of Polya trees.
 }
 \usage{
-cPTdensity(XY, tau = 0.95, raw = TRUE, prior, mcmc, state,status, data =
-          sys.frame(sys.parent()), na.action = na.fail)
+cPTdensity(XY, tau = 0.95, raw = TRUE, structure = "min", prior, mcmc, state,
+ status, data = sys.frame(sys.parent()), na.action = na.fail)
 }
 
 \arguments{
@@ -22,7 +22,8 @@ cPTdensity(XY, tau = 0.95, raw = TRUE, prior, mcmc, state,status, data =
    converted to unit Fréchet scale. If \code{FALSE}, \code{X} and
    \code{Y} will be understood as already in unit Fréchet scale. If a
    single variable is provided
-   \code{raw} is automatically set to \code{TRUE}.}  
+   \code{raw} is automatically set to \code{TRUE}.}
+ \item{structure}{the structure scedasis option: "min","max","sum". The default will compute the minimum.}
  \item{prior}{a list giving the prior information. The list includes the
    following parameter: \code{a0} and \code{b0} giving the
    hyperparameters for prior distribution of the precision parameter of
@@ -48,74 +49,74 @@ cPTdensity(XY, tau = 0.95, raw = TRUE, prior, mcmc, state,status, data =
    and precision parameter, respectively (the default value is 1.1)}
 \item{state}{a list giving the current value of the parameters. This
   list is used if the current analysis is the continuation of a previous
-  analysis.}    
+  analysis.}
 \item{status}{a logical variable indicating whether this run is new
   (\code{TRUE}) or the continuation of a previous analysis
   (\code{FALSE}). In the latter case the current value of the parameters
   must be specified in the object \code{state}.}
-\item{data}{data frame.}                    
+\item{data}{data frame.}
 \item{na.action}{a function that indicates what should happen when the data
-                     contain \code{NA}s. The default action (\code{na.fail}) causes 
+                     contain \code{NA}s. The default action (\code{na.fail}) causes
                      \code{PTdensity} to print an error message and terminate if there are any
-                     incomplete observations.}      
+                     incomplete observations.}
 }
 
 \value{
-  \item{c}{Joint scedasis density estimator.}
+  \item{c}{Structure scedasis density estimator.}
   \item{k}{number of exceedances above the threshold.}
   \item{w}{standardized indices of exceedances.}
   \item{Y}{raw data.}
-  \item{al}{ giving the value of the baseline shape parameter.} 
+  \item{al}{ giving the value of the baseline shape parameter.}
   \item{be}{ giving the value of the baseline scale parameter.}
   \item{alpha}{ giving the value of the precision parameter.}
-  The \code{plot} method depicts the estimated joint scedasis density. 
+  The \code{plot} method depicts the estimated structure scedasis density.
 }
-\details{This function learns about the joint scedasis function using a
+\details{This function learns about the structure scedasis function using a
   Mixture of Polya Trees (MPT) prior as proposed in Palacios and de Carvalho (2020). In the
   particular case where XY contains no third column, the function learns
   about the scedasis function of Einmahl et al (2016) using an MPT
-  prior. The details are as follows. Let \deqn{Z_i = min(X_i, Y_i)}. 
+  prior. The details are as follows. Let \deqn{Z_i = min(X_i, Y_i)}.
   The model is given by:
   \deqn{Z_1, \ldots , Z_n | G \sim G}{Z1,...,Zn | G ~ G}
   \deqn{G | \alpha,al,be \sim PT(\Pi^{al,be},\textit{A})}{G | alpha,a,b ~ PT(Pi^{al,be},\textit{A})}
-  where, the the PT is centered around a \eqn{Beta(al,be)}{Beta(al,be)} distribution, by taking each \eqn{m} level of the partition \eqn{\Pi^{al, be}}{\Pi^{al, be}} to coincide 
+  where, the the PT is centered around a \eqn{Beta(al,be)}{Beta(al,be)} distribution, by taking each \eqn{m} level of the partition \eqn{\Pi^{al, be}}{\Pi^{al, be}} to coincide
   with the \eqn{k/2^m, k=0,\ldots,2^m} quantile of the \eqn{Beta(al,be)}{Beta(al,be)} distribution.
-  The family \eqn{\textit{A}=\{\alpha_e: e \in E^{*}\}}{\textit{A}=\{alphae: e \in E^{*}\}}, 
-  where \eqn{E^{*}=\bigcup_{m=0}^{m} E^m}{E^{*}=\bigcup_{m=0}^{M} E^m} 
+  The family \eqn{\textit{A}=\{\alpha_e: e \in E^{*}\}}{\textit{A}=\{alphae: e \in E^{*}\}},
+  where \eqn{E^{*}=\bigcup_{m=0}^{m} E^m}{E^{*}=\bigcup_{m=0}^{M} E^m}
   and \eqn{E^m} is the \eqn{m}-fold product of \eqn{E=\{0,1\}},
-  was specified as \eqn{\alpha_{e_1 \ldots e_m}=\alpha m^2}{alpha{e1 \ldots em}=\alpha m^2}. 
+  was specified as \eqn{\alpha_{e_1 \ldots e_m}=\alpha m^2}{alpha{e1 \ldots em}=\alpha m^2}.
 
   In the univariate case,the following proper priors can be assigned:
     \deqn{al |  m_0, S_0 \sim LNormal(m_0,S_0)}{al | m0, S0 ~ LNormal(m0,S0)}
   \deqn{be | \tau_1, \tau_2 \sim LNormal(\tau_1,\tau_2)}{be | tau1, tau2 ~ LNormal(tau1,tau2)}
- 
+
    To complete the model specification, independent hyperpriors are assumed,
   \deqn{\alpha | a_0, b_0 \sim \Gamma(a_0,b_0)}{alpha | a0, b0 ~ \Gamma(a0,b0)}
-  
-  The precision parameter, \eqn{\alpha}{alpha}, of the \code{PT} prior 
-  can be considered as random, having a \code{gamma} distribution, \eqn{\Gamma(a_0,b_0)}{\Gamma(a0,b0)}, 
+
+  The precision parameter, \eqn{\alpha}{alpha}, of the \code{PT} prior
+  can be considered as random, having a \code{gamma} distribution, \eqn{\Gamma(a_0,b_0)}{\Gamma(a0,b0)},
   or fixed at some particular value. To let \eqn{\alpha}{alpha} to be fixed at a particular
   value, set \eqn{a_0}{a0} to NULL in the prior specification.
 
-  In the computational implementation of the model, Metropolis--Hastings steps are used to 
+  In the computational implementation of the model, Metropolis--Hastings steps are used to
   sample the posterior distribution of the baseline and precision parameters.
 }
 
-\references{  
+\references{
   Palacios, V., de Carvalho, M. (2020) Bayesian semiparametric modeling
-  of jointly heteroscedastic extremes. \emph{Preprint.}  
+  of jointly heteroscedastic extremes. \emph{Preprint.}
   %% Einmahl, J. H., Haan, L., and Zhou, C. (2016) Statistics of
   %% heteroscedastic extremes. \emph{Journal of the Royal Statistical
   %% Society: Ser. B}, 78(1), 31--51.
-  
+
   %% Hanson, T. (2006) Inference for Mixtures of Finite Polya Trees.
   %% \emph{ Journal of the American Statistical Association}, 101: 1548-1565.
- % Lavine, M. (1992) Some aspects of Polya tree distributions for statistical 
+ % Lavine, M. (1992) Some aspects of Polya tree distributions for statistical
   %modelling. The Annals of Statistics, 20: 1222-11235.
-  %Lavine, M. (1994) More aspects of Polya tree distributions for statistical 
+  %Lavine, M. (1994) More aspects of Polya tree distributions for statistical
   %modelling. The Annals of Statistics, 22: 1161-1176.
   }
-  
+
 \examples{
 \dontrun{
 ## Example from Palacios and de Carvalho (2020, submitted)
