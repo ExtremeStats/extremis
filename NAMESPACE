@@ -10,6 +10,7 @@ import(MASS)
 import(evd)
 importFrom("grDevices", "gray")
 importFrom("methods","is")
+importFrom("utils","tail")
 export(angcdf, angcdf.default,
        angdensity, angdensity.default,
        angscdf, angscdf.default,
