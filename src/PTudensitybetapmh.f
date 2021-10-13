@@ -93,12 +93,12 @@ c        nlevel      :  integer giving the number of binary partitions
 c                       in the Finite Polya tree prior.
 c        jfr         :  integer vector indicating whether Jeffery's
 c                       prior is used for the centering parameters.
-c        m0          :  real giving the mean of the normal prior
-c                       for the centering mean.
-c        s0          :  real giving the variance of the normal prior
-c                       for the centering mean.
+c        m0          :  real giving the mean of the log- normal prior
+c                       for the shape paramter.
+c        s0          :  real giving the variance of the log-normal prior
+c                       for the shape parameter.
 c        tau         :  real vector giving the hyperparameters of
-c                       inverse gamma prior for the centering variance.
+c                       log-normal prior for the centering scale parameter.
 c
 c-----------------------------------------------------------------------
 c
@@ -243,7 +243,7 @@ c+++++MCMC parameters
 
 c+++++Stored output
       double precision acrate(3),f(ngrid)
-      double precision thetasave(nsave,3),estimasave(nsave,nrec)
+      double precision thetasave(nsave,3),estimasave(nsave,ngrid)
       double precision cpo(nrec)
 
 c+++++Current values of the parameters
@@ -288,7 +288,7 @@ c+++++Working space - Polya tree parameters
 
 c+++++Working space - Random number generator
       integer seed(2),seed1,seed2
-      double precision rbeta,rnorm,rtlnorm
+      double precision rbeta,rlnormal
       real runif
 
 c++++ initialize variables
@@ -429,7 +429,7 @@ c++++++++++++++++++++++++++++++++++++++++++++++++++++++++
             logliko=0.d0
             loglikn=0.d0
 
-            alc=rtlnorm(log(al),tune1*0.1d0,0,0,.true.,.true.)
+            alc=rlnormal(log(al),tune1*0.1d0)
             
 
             logcgkn=dlnrm(al ,log(alc),tune1*0.1d0,1) 
@@ -486,10 +486,10 @@ c++++++++++ acceptance step
 
             if(jfr(2).eq.0)then
                logpriorn=(0.5d0*m0-1.d0)*log(alc)-
-     &                     0.5d0*s0*alc
+     &                     0.5d0*s0/alc
 
                logprioro=(0.5d0*m0-1.d0)*log(al)-
-     &                     0.5d0*s0*al
+     &                     0.5d0*s0/al
             end if
 
             ratio=loglikn-logliko+logcgkn-logcgko+
@@ -516,7 +516,7 @@ c++++++++++++++++++++++++++++++++++++++++++++++++++++++++
             logliko=0.d0
             loglikn=0.d0
 
-            bec=rtlnorm(log(be),tune2*0.1d0,0,0,.true.,.true.)
+            bec=rlnormal(log(be),tune2*0.1d0)
             
             logcgkn=dlnrm(be ,log(bec),tune2*0.1d0,1) 
             logcgko=dlnrm(bec,log(be ),tune2*0.1d0,1) 
@@ -572,10 +572,10 @@ c++++++++++ acceptance step
 
             if(jfr(2).eq.0)then
                logpriorn=(0.5d0*tau(1)-1.d0)*log(bec)-
-     &                     0.5d0*tau(2)*bec
+     &                     0.5d0*tau(2)/bec
 
                logprioro=(0.5d0*tau(1)-1.d0)*log(be)-
-     &                     0.5d0*tau(2)*be
+     &                     0.5d0*tau(2)/be
             end if
 
             ratio=loglikn-logliko+logcgkn-logcgko+
@@ -598,7 +598,7 @@ c++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 c++++++++++ sample candidates
 
-            cparc=rtlnorm(log(cpar),tune3*0.2,0,0,.true.,.true.)
+            cparc=rlnormal(log(cpar),tune3*0.2)
             logcgkn=dlnrm(cpar ,log(cparc),tune3*0.2,1) 
             logcgko=dlnrm(cparc,log(cpar ),tune3*0.2,1) 
 
@@ -673,7 +673,6 @@ c+++++++++++++ cpo
                do i=1,nrec
                   tmp1=prob(intpo(i))*dble(ninter)*
      &                 dbet(y(i),al,be,0)
-                  estimasave(isave,i)=tmp1
                   cpo(i)=cpo(i)+1.0d0/tmp1 
                end do
 
@@ -703,6 +702,8 @@ c+++++++++++++ density
                      end if  
                   end do
                   f(i)=f(i)+prob(intlp)*dble(ninter)*
+     &                 dbet(grid(i),al,be,0)
+                   estimasave(isave,i)=prob(intlp)*dble(ninter)*
      &                 dbet(grid(i),al,be,0)
                end do
 
